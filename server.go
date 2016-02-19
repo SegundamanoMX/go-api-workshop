@@ -15,10 +15,22 @@ type WorkerConf struct {
 	Port string
 }
 
+var (
+	userChan   chan User
+	resultChan chan string
+)
+
 func main() {
+	// Initialize channels
+	userChan = make(chan User)
+	resultChan = make(chan string)
+
 	// Run an instance though a goroutine
 	conf1 := WorkerConf{":3001"}
 	go mainApiWorker(conf1)
+
+	go handleUser("Handler 1")
+	go handleUser("Handler 2")
 
 	// Run an instance in the main thread
 	conf2 := WorkerConf{":3002"}
@@ -63,11 +75,14 @@ func postUser(c *gin.Context) {
 	var user User
 
 	if c.BindJSON(&user) == nil {
-		fmt.Println(user)
-		if user.Name == "sergio" && user.Password == "pizza" {
+		userChan <- user
+		result := <-resultChan
+		if result == "OK" {
 			c.JSON(http.StatusOK, gin.H{"status": "you are italian"})
+			return
 		} else {
 			c.JSON(http.StatusUnauthorized, gin.H{"status": "unauthorized"})
+			return
 		}
 	}
 }
@@ -92,4 +107,15 @@ func getHelloAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": str,
 	})
+}
+
+func handleUser(workerName string) {
+	for user := range userChan {
+		fmt.Printf("[%s] Got request for user %s\n", workerName, user.Name)
+		if user.Name == "sergio" && user.Password == "pizza" {
+			resultChan <- "OK"
+		} else {
+			resultChan <- "Darn"
+		}
+	}
 }
