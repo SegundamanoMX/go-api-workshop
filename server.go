@@ -42,7 +42,6 @@ func postUser(c *gin.Context) {
 	var user User
 
 	if c.BindJSON(&user) == nil {
-		fmt.Println(user)
 		if user.Name == "sergio" && user.Password == "pizza" {
 			c.JSON(http.StatusOK, gin.H{"status": "you are italian"})
 		} else {

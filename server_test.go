@@ -13,7 +13,7 @@ import (
 
 var router *gin.Engine
 
-func initAPI() {
+func init() {
 	router = gin.New()
 	router.POST("/user", postUser)
 	router.GET("/hello", getHello)
@@ -21,7 +21,6 @@ func initAPI() {
 }
 
 func TestPostUserReturnsWithStatusOK(t *testing.T) {
-	initAPI()
 	data := `{"name": "sergio", "pass":"pizza"}`
 	reader := strings.NewReader(data)
 	request, _ := http.NewRequest("POST", "/user", reader)
@@ -59,4 +58,14 @@ func TestGetUserNameReturnsWithStatusOK(t *testing.T) {
 	expected := `{"message":"Hello, david"}
 `
 	assert.Equal(t, resp.Body.String(), expected)
+}
+
+func BenchmarkPostUser(b *testing.B) {
+	for n := 0; n < b.N; n++ {
+		data := `{"name": "sergio", "pass":"pizza"}`
+		reader := strings.NewReader(data)
+		request, _ := http.NewRequest("POST", "/user", reader)
+		resp := httptest.NewRecorder()
+		router.ServeHTTP(resp, request)
+	}
 }
